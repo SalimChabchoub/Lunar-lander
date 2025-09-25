@@ -46,8 +46,8 @@ class AgentDQNCible():
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        if self.replaybuffer.iter % 100 == 0:
-            self.qnn_cible.load_state_dict(self.qnn.state_dict())
+        for param_duplicat, param_source in zip(self.qnn_cible.parameters(), self.qnn.parameters()):
+           param_duplicat.data.copy_(param_source.data)
         return 0
     
     
