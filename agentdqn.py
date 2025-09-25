@@ -19,16 +19,38 @@ class AgentDQN():
         
 
         """
+        self.replaybuffer = ReplayBuffer(10000, 64)
+        self.dim_action = dim_action
+        self.dim_etat = dim_etat
+        self.gamma = gamma
         self.state_size = dim_etat
         self.action_size = dim_action
+        self.qnn = QNN(dim_etat, dim_action)
+        self.optimizer = optim.Adam(self.qnn.parameters(), lr=0.001)
+        self.criterion = nn.MSELoss()
         
 
     def phase_echantillonage(self,etat : np.ndarray ,action : np.ndarray ,recompense: float,etat_suivant: np.ndarray ,terminaison: bool):
+        self.replaybuffer.add(etat, action, recompense, etat_suivant, terminaison)
         return 0
         
     def phase_apprentissage(self):
+        sj,aj,rj,sJplus,dones = self.replaybuffer.sample()
+        q_values = self.qnn.forward(sj).gather(1, aj)
+        with torch.no_grad():
+            q_next = self.qnn.forward(sJplus).max(1)[0].unsqueeze(1)
+            q_target = rj + (self.gamma * q_next * (1 - dones))
+        loss = self.criterion(q_values, q_target)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
         return 0
     
     
     def action_egreedy(self, etat : np.ndarray ,eps: float = 0.0) -> int:
-        return 0
+        if random.random() > eps:
+            with torch.no_grad():
+                q_values = self.qnn.forward(etat)
+                return torch.argmax(q_values).item()
+        else:
+            return random.randint(0, self.dim_action - 1)
