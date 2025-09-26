@@ -19,17 +19,20 @@ class AgentDQNCible():
         
 
         """
-        self.replaybuffer = ReplayBuffer(10000, 64)
+        self.replaybuffer = ReplayBuffer(100000, 64)
         self.dim_action = dim_action
         self.dim_etat = dim_etat
         self.gamma = gamma
         self.state_size = dim_etat
         self.action_size = dim_action
         self.qnn = QNN(dim_etat, dim_action)
-        self.optimizer = optim.Adam(self.qnn.parameters(), lr=0.001)
+        self.optimizer = optim.Adam(self.qnn.parameters(), lr=0.0001)
         self.criterion = nn.MSELoss()
         self.qnn_cible = QNN(dim_etat, dim_action)
         self.qnn_cible.load_state_dict(self.qnn.state_dict())
+
+        self.learn_step = 0      # Compteur de steps
+        self.C = 100               # Fréquence d’update du target network
         
 
     def phase_echantillonage(self,etat : np.ndarray ,action : np.ndarray ,recompense: float,etat_suivant: np.ndarray ,terminaison: bool):
@@ -46,8 +49,10 @@ class AgentDQNCible():
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        for param_duplicat, param_source in zip(self.qnn_cible.parameters(), self.qnn.parameters()):
-           param_duplicat.data.copy_(param_source.data)
+        self.learn_step += 1
+        if self.learn_step % self.C == 0:
+            for param_duplicat, param_source in zip(self.qnn_cible.parameters(), self.qnn.parameters()):
+                param_duplicat.data.copy_(param_source.data)
         return 0
     
     
