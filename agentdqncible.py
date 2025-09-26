@@ -26,7 +26,7 @@ class AgentDQNCible():
         self.state_size = dim_etat
         self.action_size = dim_action
         self.qnn = QNN(dim_etat, dim_action)
-        self.optimizer = optim.Adam(self.qnn.parameters(), lr=0.0001)
+        self.optimizer = optim.Adam(self.qnn.parameters(), lr=0.001)
         self.criterion = nn.MSELoss()
         self.qnn_cible = QNN(dim_etat, dim_action)
         self.qnn_cible.load_state_dict(self.qnn.state_dict())
